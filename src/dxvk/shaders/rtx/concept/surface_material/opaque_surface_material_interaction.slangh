@@ -516,7 +516,7 @@ OpaqueSurfaceMaterialInteraction opaqueSurfaceMaterialInteractionCreate(
     }
     else
     {
-      opacity = albedoOpacitySample.a;
+      opacity *= albedoOpacitySample.a;
       thinFilmThickness = float16_t(0.0f);
     }
   }
@@ -702,6 +702,10 @@ OpaqueSurfaceMaterialInteraction opaqueSurfaceMaterialInteractionCreate(
   {
     emissiveColor = emissiveColorSample.xyz;
   }
+  else if (albedoOpacityLoaded)
+  {
+    emissiveColor = opaqueSurfaceMaterial.emissiveColorConstant * albedoOpacitySample.rgb;
+  }
 
   // Note: Gamma correct emissive color input (be it from a constant or a texture). Currently assuming all textures are not using sRGB formats which
   // automatically do this conversion.
@@ -724,6 +728,16 @@ OpaqueSurfaceMaterialInteraction opaqueSurfaceMaterialInteractionCreate(
   // account for how much light is being transmitted due to the opacity (similar to how Fresnel on glass works).
   opaqueSurfaceMaterialInteraction.albedo = surface.isMatte ? f16vec3(0) : albedoToAdjustedAlbedo(albedo, metallic, opacity);
   opaqueSurfaceMaterialInteraction.baseReflectivity = surface.isMatte ? f16vec3(0) : calcBaseReflectivity(albedo, metallic, opacity);
+  {
+    float16_t isRough0 = 1.0 - smoothstep( 0.7, 1.0, roughness );
+    float16_t isMetal1 = metallic;
+
+    //         |  metal=0  |  metal=1  |
+    // rough=0 |     1     |     1     |
+    // rough=1 |     0     |     1     |
+
+    opaqueSurfaceMaterialInteraction.baseReflectivity *= saturate( isRough0 + isMetal1 );
+  }
    
   // Note: Roughness loaded from texture is a perceptual roughness value (for optimal encoding), so this works as intended.
   calcRoughness(roughness, opaqueSurfaceMaterial.anisotropy,

@@ -107,6 +107,7 @@ private:
   std::unordered_map<remixapi_LightHandle, RtLight> m_externalLights;
   std::unordered_map<remixapi_LightHandle, DomeLight> m_externalDomeLights;
   std::unordered_set<remixapi_LightHandle> m_externalActiveLightList;
+  std::unordered_map<remixapi_LightHandle, uint32_t> m_externalPrevFrameBufferIdx;
   remixapi_LightHandle m_externalActiveDomeLight = nullptr;
   DomeLightArgs m_gpuDomeLightArgs;
 
@@ -120,7 +121,7 @@ private:
   // prepareSceneData function where they are primarily used to prevent redundant allocations/frees
   // of the memory behind these buffers between each call (at the cost of slightly more persistent
   // memory usage, but these buffers are fairly small at only 4 MiB or so max with 2^16 lights present).
-  std::vector<RtLight*> m_linearizedLights{};
+  std::vector<std::pair<RtLight*,remixapi_LightHandle>> m_linearizedLights{};
   std::vector<unsigned char> m_lightsGPUData{};
   std::vector<uint16_t> m_lightMappingData{};
 

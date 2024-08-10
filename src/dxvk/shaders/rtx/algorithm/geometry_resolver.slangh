@@ -219,7 +219,9 @@ void geometryResolverOutputSurface(
     vec2 motionVectorPixel = motionVectorUVOffset * cb.camera.resolution;
 
     // Write out screen-space motion.
-    PrimaryScreenSpaceMotionVector[pixelCoordinate] = motionVectorPixel;
+// HACKHACK
+    PrimaryScreenSpaceMotionVector[pixelCoordinate] = isViewModel ? vec2(0.0) : motionVectorPixel;
+// HACKHACK
 
     const float luminance = calcBt709Luminance(radiance);
     const bool isRadianceOutput = luminance > 0.0f;
@@ -319,7 +321,10 @@ void geometryResolverDLSSRROutputSurface(
     Ray ray,
     Surface surface, SurfaceInteraction surfaceInteraction,
     PolymorphicSurfaceMaterialInteraction polymorphicSurfaceMaterialInteraction,
-    f16vec3 attenuation, f16vec4 accumulatedRotation, float virtualHitDistance)
+    f16vec3 attenuation, f16vec4 accumulatedRotation, float virtualHitDistance,
+// HACKHACK
+    bool isViewModel)
+// HACKHACK
 {
   // Recreate the original primary camera ray
   // Note: This is done to not have to pass extra information into the payload.
@@ -351,7 +356,9 @@ void geometryResolverDLSSRROutputSurface(
   vec2 motionVectorPixel = motionVectorUVOffset * cb.camera.resolution;
 
   // Write out screen-space motion.
-  PrimaryScreenSpaceMotionVectorDLSSRR[pixelCoordinate] = motionVectorPixel;
+// HACKHACK
+  PrimaryScreenSpaceMotionVectorDLSSRR[pixelCoordinate] = isViewModel ? vec2(0.0) : motionVectorPixel;
+// HACKHACK
 
   // Serialize out the Surface Material Interaction
   // Note: Always write to stochastic buffers in the primary surface case.
@@ -1463,7 +1470,10 @@ void geometryResolverVertex(
   {
     geometryResolverDLSSRROutputSurface(
         geometryResolverState.pixelCoordinate, ray, surface, surfaceInteraction, polymorphicSurfaceMaterialInteraction,
-        geometryResolverState.attenuation, geometryResolverState.accumulatedRotation, geometryResolverState.accumulatedHitDistance
+        geometryResolverState.attenuation, geometryResolverState.accumulatedRotation, geometryResolverState.accumulatedHitDistance,
+// HACKHACK
+        geometryResolverState.isViewModelSurface
+// HACKHACK
     );
   }
 

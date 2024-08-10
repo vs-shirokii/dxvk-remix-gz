@@ -783,6 +783,41 @@ namespace dxvk {
     getSceneManager().submitExternalDraw(this, std::move(state));
   }
 
+  void RtxContext::HACK_bindExternalImage(Rc<DxvkImageView> view) {
+
+    // TODO: remove hack
+    if ( getSceneManager().m_externalSampler == nullptr) {
+      auto s = DxvkSamplerCreateInfo{};
+      {
+        s.magFilter      = VK_FILTER_NEAREST;
+        s.minFilter      = VK_FILTER_LINEAR;
+        s.mipmapMode     = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        s.mipmapLodBias  = 0.f;
+        s.mipmapLodMin   = 0.f;
+        s.mipmapLodMax   = 0.f;
+        s.useAnisotropy  = VK_FALSE;
+        s.maxAnisotropy  = 1.f;
+        s.addressModeU   = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        s.addressModeV   = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        s.addressModeW   = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        s.compareToDepth = VK_FALSE;
+        s.compareOp      = VK_COMPARE_OP_NEVER;
+        s.borderColor    = VkClearColorValue{};
+        s.usePixelCoord  = VK_FALSE;
+      }
+      getSceneManager().m_externalSampler = m_device->createSampler(s);
+    }
+
+    uint32_t slot = computeResourceSlotId(
+      DxsoProgramType::PixelShader,
+      DxsoBindingType::Image,
+      // first image
+      uint32_t(0));
+
+    this->bindResourceView(slot, view, nullptr);
+    this->bindResourceSampler(slot, getSceneManager().m_externalSampler);
+  }
+
   static uint32_t jenkinsHash(uint32_t a) {
     // http://burtleburtle.net/bob/hash/integer.html
     a = (a + 0x7ed55d16) + (a << 12);

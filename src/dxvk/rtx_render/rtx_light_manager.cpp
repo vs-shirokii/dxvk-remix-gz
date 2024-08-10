@@ -317,19 +317,19 @@ namespace dxvk {
     m_linearizedLights.clear();
 
     if (m_fallbackLight) {
-      m_linearizedLights.emplace_back(&*m_fallbackLight);
+      m_linearizedLights.emplace_back(&*m_fallbackLight, nullptr);
     }
 
     for (auto&& pair : m_lights) {
       RtLight& light = pair.second;
 
-      m_linearizedLights.emplace_back(&light);
+      m_linearizedLights.emplace_back(&light, nullptr);
     }
 
     for (auto& handle : m_externalActiveLightList) {
       auto found = m_externalLights.find(handle);
       if (found != m_externalLights.end()) {
-        m_linearizedLights.emplace_back(&found->second);
+        m_linearizedLights.emplace_back(&found->second, handle);
       }
     }
 
@@ -337,7 +337,7 @@ namespace dxvk {
 
     m_lightTypeRanges.fill(LightRange {});
     for (auto&& linearizedLight : m_linearizedLights) {
-      const RtLight& light = *linearizedLight;
+      const RtLight& light = *linearizedLight.first;
 
       if (light.getColorAndIntensity().w <= 0) {
         continue;
@@ -381,15 +381,27 @@ namespace dxvk {
     // Clear all slots to new light
     memset(m_lightMappingData.data(), kNewLightIdx, sizeof(uint16_t) * m_lightMappingData.size());
 
+    std::unordered_map<remixapi_LightHandle, uint32_t> externalCurrentFrameBufferIdx{};
+
     // Write the light data into the previously allocated ranges
     for (auto&& linearizedLight : m_linearizedLights) {
-      RtLight& light = *linearizedLight;
+      RtLight& light = *linearizedLight.first;
 
       if (light.getColorAndIntensity().w > 0 && lightsWritten < m_currentActiveLightCount) {
         // Find the buffer location for this light
         LightRange& range = m_lightTypeRanges[static_cast<uint32_t>(light.getType())];
         uint32_t newBufferIdx = range.offset + range.count;
         ++range.count;
+
+        if (linearizedLight.second) {
+          auto f = m_externalPrevFrameBufferIdx.find(linearizedLight.second);
+          if (f != m_externalPrevFrameBufferIdx.end()) {
+            auto prevBufferIdx = f->second;
+            if (prevBufferIdx < kNewLightIdx) {
+              light.setBufferIdx(prevBufferIdx);
+            }
+          }
+        }
 
         // RTXDI needs a mapping from previous light idx to current (to deal with light list reordering)
         if (light.getBufferIdx() != kNewLightIdx)
@@ -405,6 +417,10 @@ namespace dxvk {
 
         // Update the position in buffer for next frame
         light.setBufferIdx(newBufferIdx);
+
+        if (linearizedLight.second) {
+          externalCurrentFrameBufferIdx[linearizedLight.second] = newBufferIdx;
+        }
 
         // Guard against overflowing the light buffer, in case the light counting loop above terminated early
         ++lightsWritten;
@@ -465,6 +481,7 @@ namespace dxvk {
     // Reset external active light list.
     m_externalActiveDomeLight = nullptr;
     m_externalActiveLightList.clear();
+    m_externalPrevFrameBufferIdx = std::move(externalCurrentFrameBufferIdx);
   }
 
   static const float kNotSimilar = -1.f;
@@ -661,9 +678,14 @@ namespace dxvk {
   void LightManager::addExternalLight(remixapi_LightHandle handle, const RtLight& rtlight) {
     auto found = m_externalLights.find(handle);
     if (found != m_externalLights.end()) {
+      auto bufidx = kNewLightIdx;
+      if (rtlight.getType() == found->second.getType()) {
+        bufidx = found->second.getBufferIdx();
+      }
       // TODO: warn the user about id collision,
       //       or just overwriting existing one is fine?
       found->second = rtlight;
+      found->second.setBufferIdx(bufidx);
     } else {
       m_externalLights.emplace(handle, rtlight);
     }

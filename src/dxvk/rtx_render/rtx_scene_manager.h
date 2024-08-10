@@ -295,6 +295,7 @@ private:
     dxvk::mutex mutex {};
   } m_drawCallMeta {};
 
+public:
   // TODO: expand to many different
   Rc<DxvkSampler> m_externalSampler = nullptr;
 };

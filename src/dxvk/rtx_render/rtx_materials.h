@@ -403,7 +403,8 @@ struct RtOpaqueSurfaceMaterial {
     // Bytes 0-3
     if (m_albedoOpacityTextureIndex != kSurfaceMaterialInvalidTextureIndex) {
       writeGPUHelperExplicit<2>(data, offset, m_albedoOpacityTextureIndex);
-      writeGPUPadding<2>(data, offset); // Note: Padding for unused space
+      writeGPUPadding<1>(data, offset); // Note: Padding for unused space
+      writeGPUHelper(data, offset, packUnorm<8, uint8_t>(m_albedoOpacityConstant.w));
       flags |= OPAQUE_SURFACE_MATERIAL_FLAG_HAS_ALBEDO_TEXTURE;
     } else {
       writeGPUHelper(data, offset, packUnorm<8, uint8_t>(m_albedoOpacityConstant.x));

@@ -1477,7 +1477,7 @@ namespace dxvk {
     if (m_externalSampler == nullptr) {
       auto s = DxvkSamplerCreateInfo {};
       {
-        s.magFilter = VK_FILTER_LINEAR;
+        s.magFilter = VK_FILTER_NEAREST;
         s.minFilter = VK_FILTER_LINEAR;
         s.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         s.mipmapLodBias = 0.f;

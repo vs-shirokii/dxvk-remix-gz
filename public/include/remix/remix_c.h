@@ -51,7 +51,7 @@
 #define REMIXAPI_VERSION_GET_PATCH(version) (((uint64_t)(version)      ) & (uint64_t)0xFFFF)
 
 #define REMIXAPI_VERSION_MAJOR 0
-#define REMIXAPI_VERSION_MINOR 4
+#define REMIXAPI_VERSION_MINOR 5
 #define REMIXAPI_VERSION_PATCH 1
 
 
@@ -90,6 +90,8 @@ extern "C" {
     REMIXAPI_STRUCT_TYPE_LIGHT_INFO_USD_EXT                   = 21,
     REMIXAPI_STRUCT_TYPE_STARTUP_INFO                         = 22,
     REMIXAPI_STRUCT_TYPE_PRESENT_INFO                         = 23,
+    REMIXAPI_STRUCT_TYPE_UI_INSTANCE_INFO                     = 24,
+    REMIXAPI_STRUCT_TYPE_CREATE_IMAGE_INFO                    = 25,
     // NOTE: if adding a new struct, register it in 'rtx_remix_specialization.inl'
   } remixapi_StructType;
 
@@ -113,6 +115,9 @@ extern "C" {
     // WinAPI's GetFullPathName has failed
     REMIXAPI_ERROR_CODE_GET_FULL_PATH_NAME_FAILURE        = 10,
     REMIXAPI_ERROR_CODE_NOT_INITIALIZED                   = 11,
+    REMIXAPI_ERROR_CODE_INVALID_INPUT_DATA                = 12,
+    // Input hash field must not be 0
+    REMIXAPI_ERROR_CODE_INVALID_HASH                      = 13,
     // Error codes that are encoded as HRESULT, i.e. returned from D3D9 functions.
     // Look MAKE_D3DHRESULT, but with _FACD3D=0x896, instead of D3D9's 0x876
     REMIXAPI_ERROR_CODE_HRESULT_NO_REQUIRED_GPU_FEATURES      = 0x88960001,
@@ -153,6 +158,10 @@ extern "C" {
   typedef struct remixapi_Transform {
     float matrix[3][4];
   } remixapi_Transform;
+
+  typedef struct remixapi_Matrix {
+    float matrix[4][4];
+  } remixapi_Matrix;
 
   typedef struct remixapi_MaterialHandle_T* remixapi_MaterialHandle;
   typedef struct remixapi_MeshHandle_T* remixapi_MeshHandle;
@@ -288,6 +297,11 @@ extern "C" {
     uint32_t                        blendIndices_count;
   } remixapi_MeshInfoSkinning;
 
+  typedef enum remixapi_MeshInfoSurfaceTrianglesBit {
+    REMIXAPI_MESH_INFO_SURFACE_TRIANGLES_BIT_USE_TRIANGLE_NORMALS = 1,
+  } remixapi_MeshInfoSurfaceTrianglesBit;
+  typedef uint32_t remixapi_MeshInfoSurfaceTrianglesFlags;
+
   typedef struct remixapi_MeshInfoSurfaceTriangles {
     const remixapi_HardcodedVertex* vertices_values;
     uint64_t                        vertices_count;
@@ -296,6 +310,7 @@ extern "C" {
     remixapi_Bool                   skinning_hasvalue;
     remixapi_MeshInfoSkinning       skinning_value;
     remixapi_MaterialHandle         material;
+    remixapi_MeshInfoSurfaceTrianglesFlags flags;
   } remixapi_MeshInfoSurfaceTriangles;
 
   typedef struct remixapi_MeshInfo {
@@ -406,6 +421,7 @@ extern "C" {
     REMIXAPI_INSTANCE_CATEGORY_BIT_THIRD_PERSON_PLAYER_BODY  = 1 << 19,
     REMIXAPI_INSTANCE_CATEGORY_BIT_IGNORE_BAKED_LIGHTING     = 1 << 20,
     REMIXAPI_INSTANCE_CATEGORY_BIT_IGNORE_ALPHA_CHANNEL      = 1 << 21,
+    REMIXAPI_INSTANCE_CATEGORY_BIT_FIRST_PERSON              = 1 << 31,
   } remixapi_InstanceCategoryBit;
 
   typedef uint32_t remixapi_InstanceCategoryFlags;
@@ -421,6 +437,134 @@ extern "C" {
 
   typedef remixapi_ErrorCode(REMIXAPI_PTR* PFN_remixapi_DrawInstance)(
     const remixapi_InstanceInfo* info);
+
+
+
+  typedef struct remixapi_Viewport {
+    float     x;
+    float     y;
+    float     width;
+    float     height;
+    float     minDepth;
+    float     maxDepth;
+  } remixapi_Viewport;
+
+  typedef enum remixapi_RasterizedInstanceBit {
+    REMIXAPI_RASTERIZED_INSTANCE_CATEGORY_BIT_SKY                            = 1 << 0,
+    REMIXAPI_RASTERIZED_INSTANCE_CATEGORY_BIT_USE_MAINCAMERA_VIEW_PROJECTION = 1 << 1,
+    REMIXAPI_RASTERIZED_INSTANCE_CATEGORY_BIT_FORCE_SKYVIEWER_AT_ORIGIN      = 1 << 2,
+    REMIXAPI_RASTERIZED_INSTANCE_CATEGORY_BIT_SKIP_NORMALS                   = 1 << 3,
+  } remixapi_RasterizedInstanceBit;
+
+  typedef uint32_t remixapi_RasterizedInstanceFlags;
+
+  typedef struct remixapi_UIInstanceInfo {
+    remixapi_StructType              sType;
+    void*                            pNext;
+    remixapi_RasterizedInstanceFlags flags;
+    const remixapi_Viewport*         pViewport;
+    const remixapi_Matrix*           pWorld;
+    const remixapi_Matrix*           pView;
+    const remixapi_Matrix*           pProjection;
+    const remixapi_HardcodedVertex*  pVertices;
+    uint32_t                         vertexCount;
+    const uint32_t*                  pIndices;
+    uint32_t                         indexCount;
+    remixapi_Path                    imageName;
+    uint32_t                         color;
+  } remixapi_UIInstanceInfo;
+
+  typedef remixapi_ErrorCode(REMIXAPI_PTR* PFN_remixapi_DrawUIInstance)(
+    const remixapi_UIInstanceInfo*  info);
+
+
+  
+typedef enum remixapi_Format {
+    REMIXAPI_FORMAT_UNDEFINED                = 0,
+    REMIXAPI_FORMAT_R8_UINT                  = 1,
+    REMIXAPI_FORMAT_R8_SINT                  = 2,
+    REMIXAPI_FORMAT_R8_UNORM                 = 3,
+    REMIXAPI_FORMAT_R8_SNORM                 = 4,
+    REMIXAPI_FORMAT_R8G8_UINT                = 5,
+    REMIXAPI_FORMAT_R8G8_SINT                = 6,
+    REMIXAPI_FORMAT_R8G8_UNORM               = 7,
+    REMIXAPI_FORMAT_R8G8_SNORM               = 8,
+    REMIXAPI_FORMAT_R16_UINT                 = 9,
+    REMIXAPI_FORMAT_R16_SINT                 = 10,
+    REMIXAPI_FORMAT_R16_UNORM                = 11,
+    REMIXAPI_FORMAT_R16_SNORM                = 12,
+    REMIXAPI_FORMAT_R16_SFLOAT               = 13,
+    REMIXAPI_FORMAT_B4G4R4A4_UNORM_PACK16    = 14,
+    REMIXAPI_FORMAT_B5G6R5_UNORM_PACK16      = 15,
+    REMIXAPI_FORMAT_B5G5R5A1_UNORM_PACK16    = 16,
+    REMIXAPI_FORMAT_R8G8B8A8_UINT            = 17,
+    REMIXAPI_FORMAT_R8G8B8A8_SINT            = 18,
+    REMIXAPI_FORMAT_R8G8B8A8_UNORM           = 19,
+    REMIXAPI_FORMAT_R8G8B8A8_SNORM           = 20,
+    REMIXAPI_FORMAT_B8G8R8A8_UNORM           = 21,
+    REMIXAPI_FORMAT_R8G8B8A8_SRGB            = 22,
+    REMIXAPI_FORMAT_B8G8R8A8_SRGB            = 23,
+    REMIXAPI_FORMAT_A2B10G10R10_UNORM_PACK32 = 24,
+    REMIXAPI_FORMAT_B10G11R11_UFLOAT_PACK32  = 25,
+    REMIXAPI_FORMAT_R16G16_UINT              = 26,
+    REMIXAPI_FORMAT_R16G16_SINT              = 27,
+    REMIXAPI_FORMAT_R16G16_UNORM             = 28,
+    REMIXAPI_FORMAT_R16G16_SNORM             = 29,
+    REMIXAPI_FORMAT_R16G16_SFLOAT            = 30,
+    REMIXAPI_FORMAT_R32_UINT                 = 31,
+    REMIXAPI_FORMAT_R32_SINT                 = 32,
+    REMIXAPI_FORMAT_R32_SFLOAT               = 33,
+    REMIXAPI_FORMAT_R16G16B16A16_UINT        = 34,
+    REMIXAPI_FORMAT_R16G16B16A16_SINT        = 35,
+    REMIXAPI_FORMAT_R16G16B16A16_SFLOAT      = 36,
+    REMIXAPI_FORMAT_R16G16B16A16_UNORM       = 37,
+    REMIXAPI_FORMAT_R16G16B16A16_SNORM       = 38,
+    REMIXAPI_FORMAT_R32G32_UINT              = 39,
+    REMIXAPI_FORMAT_R32G32_SINT              = 40,
+    REMIXAPI_FORMAT_R32G32_SFLOAT            = 41,
+    REMIXAPI_FORMAT_R32G32B32_UINT           = 42,
+    REMIXAPI_FORMAT_R32G32B32_SINT           = 43,
+    REMIXAPI_FORMAT_R32G32B32_SFLOAT         = 44,
+    REMIXAPI_FORMAT_R32G32B32A32_UINT        = 45,
+    REMIXAPI_FORMAT_R32G32B32A32_SINT        = 46,
+    REMIXAPI_FORMAT_R32G32B32A32_SFLOAT      = 47,
+    REMIXAPI_FORMAT_D16_UNORM                = 48,
+    REMIXAPI_FORMAT_D24_UNORM_S8_UINT        = 49,
+    REMIXAPI_FORMAT_D32_SFLOAT               = 50,
+    REMIXAPI_FORMAT_D32_SFLOAT_S8_UINT       = 51,
+    REMIXAPI_FORMAT_BC1_RGB_UNORM_BLOCK      = 52,
+    REMIXAPI_FORMAT_BC1_RGB_SRGB_BLOCK       = 53,
+    REMIXAPI_FORMAT_BC2_UNORM_BLOCK          = 54,
+    REMIXAPI_FORMAT_BC2_SRGB_BLOCK           = 55,
+    REMIXAPI_FORMAT_BC3_UNORM_BLOCK          = 56,
+    REMIXAPI_FORMAT_BC3_SRGB_BLOCK           = 57,
+    REMIXAPI_FORMAT_BC4_UNORM_BLOCK          = 58,
+    REMIXAPI_FORMAT_BC4_SNORM_BLOCK          = 59,
+    REMIXAPI_FORMAT_BC5_UNORM_BLOCK          = 60,
+    REMIXAPI_FORMAT_BC5_SNORM_BLOCK          = 61,
+    REMIXAPI_FORMAT_BC6H_UFLOAT_BLOCK        = 62,
+    REMIXAPI_FORMAT_BC6H_SFLOAT_BLOCK        = 63,
+    REMIXAPI_FORMAT_BC7_UNORM_BLOCK          = 64,
+    REMIXAPI_FORMAT_BC7_SRGB_BLOCK           = 65,
+  } remixapi_Format;
+
+  typedef struct remixapi_CreateImageInfo {
+    remixapi_StructType   sType;
+    void*                 pNext;
+    uint32_t              flags;
+    remixapi_Format       format;
+    remixapi_Path         imageName;
+    const void*           pData;
+    uint64_t              dataSize;
+    uint32_t              width;
+    uint32_t              height;
+} remixapi_CreateImageInfo;
+
+  typedef remixapi_ErrorCode(REMIXAPI_PTR* PFN_remixapi_CreateImage)(
+    const remixapi_CreateImageInfo*  info);
+
+  typedef remixapi_ErrorCode(REMIXAPI_PTR* PFN_remixapi_DestroyImage)(
+    remixapi_Path imageName);
 
 
 
@@ -641,6 +785,10 @@ extern "C" {
 
     PFN_remixapi_Startup            Startup;
     PFN_remixapi_Present            Present;
+
+    PFN_remixapi_DrawUIInstance     DrawUIInstance;
+    PFN_remixapi_CreateImage        CreateImage;
+    PFN_remixapi_DestroyImage       DestroyImage;
   } remixapi_Interface;
 
   REMIXAPI remixapi_ErrorCode REMIXAPI_CALL remixapi_InitializeLibrary(

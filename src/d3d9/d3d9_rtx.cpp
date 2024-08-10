@@ -7,6 +7,9 @@
 #include "d3d9_buffer.h"
 
 #include "d3d9_rtx.h"
+
+#include "../dxvk/rtx_render/apihack.h"
+
 #include "d3d9_device.h"
 
 #include "../util/util_fastops.h"
@@ -616,6 +619,10 @@ namespace dxvk {
     // Now that the DrawCallState is complete, we can use heuristics for detection
     m_activeDrawCallState.setupCategoriesForHeuristics(m_seenCameraPositionsPrev.size(),
                                                        m_seenCameraPositions);
+
+    if (d3d9State().renderStates[EXT_D3DRENDERSTATETYPE_SKY]) {
+      m_activeDrawCallState.setCategory(InstanceCategories::Sky, true);
+    }
 
     if (RtxOptions::fogIgnoreSky() && m_activeDrawCallState.categories.test(InstanceCategories::Sky)) {
       m_activeDrawCallState.fogState.mode = D3DFOG_NONE;

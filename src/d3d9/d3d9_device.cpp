@@ -58,6 +58,8 @@
 #pragma fenv_access (on)
 #endif
 
+#include "../dxvk/rtx_render/apihack.h"
+
 namespace dxvk {
   static const bool s_explicitFlush = (env::getEnvVar("DXVK_EXPLICIT_FLUSH") == "1");
 
@@ -2244,6 +2246,10 @@ namespace dxvk {
             break;
           }
 
+        case EXT_D3DRENDERSTATETYPE_SKY: {
+          break;
+        }
+
         default:
           static bool s_errorShown[256];
 
@@ -2267,6 +2273,11 @@ namespace dxvk {
       return D3DERR_INVALIDCALL;
     }
 
+#if 1
+    if (State == EXT_D3DRENDERSTATETYPE_SKY) {
+      *pValue = m_state.renderStates[State];
+    }
+#endif
     if (State < D3DRS_ZENABLE || State > D3DRS_BLENDOPALPHA)
       *pValue = 0;
     else
@@ -2734,11 +2745,18 @@ namespace dxvk {
     const D3D9Rtx::DrawContext drawContext = { PrimitiveType, 0, MinVertexIndex, NumVertices, 0, PrimitiveCount, TRUE };
     const PrepareDrawFlags drawPrepare = m_rtx.PrepareDrawUPGeometryForRT(true, upSlice, IndexDataFormat, indicesSize, vertexDataSize, vertexDataSize, VertexStreamZeroStride, drawContext);
 
+// HACKHACK begin: do not nullify vertex / index buffers before CommitGeometryToRT, so we can rasterize it
+    const bool remixapisky = bool( m_state.renderStates[EXT_D3DRENDERSTATETYPE_SKY] );
+// HACKHACK end
+
     if ((drawPrepare & PrepareDrawFlag::ApplyDrawState) ||
         (drawPrepare & PrepareDrawFlag::OriginalDrawCall)) {
       PrepareDraw(PrimitiveType);
 
       EmitCs([this,
+// HACKHACK begin
+        remixapisky,
+// HACKHACK end
         cVertexSize = vertexBufferSize,
         cBufferSlice = std::move(upSlice.slice),
         cPrimType = PrimitiveType,
@@ -2757,21 +2775,46 @@ namespace dxvk {
         if (cDrawCall) {
           ctx->drawIndexed(drawInfo.vertexCount, drawInfo.instanceCount, 0, 0, 0);
         }
+// HACKHACK begin
+        if (!remixapisky) {
+// HACKHACK end
         ctx->bindVertexBuffer(0, DxvkBufferSlice(), 0);
         ctx->bindIndexBuffer(DxvkBufferSlice(), VK_INDEX_TYPE_UINT32);
+// HACKHACK begin
+        }
+// HACKHACK end
       });
 
+// HACKHACK begin
+      if (!remixapisky) {
+// HACKHACK end
       m_state.vertexBuffers[0].vertexBuffer = nullptr;
       m_state.vertexBuffers[0].offset = 0;
       m_state.vertexBuffers[0].stride = 0;
 
       m_state.indices = nullptr;
+// HACKHACK begin
+      }
+// HACKHACK end
     }
 
     if (drawPrepare & PrepareDrawFlag::CommitToRayTracing) {
       m_rtx.CommitGeometryToRT(drawContext);
     }
     // NV-DXVK end
+
+// HACKHACK begin
+    if (remixapisky) {
+      EmitCs([this](DxvkContext* ctx) {
+        ctx->bindVertexBuffer(0, DxvkBufferSlice(), 0);
+        ctx->bindIndexBuffer(DxvkBufferSlice(), VK_INDEX_TYPE_UINT32);
+      });
+      m_state.vertexBuffers[0].vertexBuffer = nullptr;
+      m_state.vertexBuffers[0].offset       = 0;
+      m_state.vertexBuffers[0].stride       = 0;
+      m_state.indices = nullptr;
+    }
+// HACKHACK end
 
     return D3D_OK;
   }
@@ -7142,6 +7185,9 @@ namespace dxvk {
 
         // If the stage is invalid (ie. no texture bound),
         // this and all subsequent stages get disabled.
+
+        if (idx != 0)
+
         if (m_state.textures[idx] == nullptr) {
           if (((data[DXVK_TSS_COLORARG0] & D3DTA_SELECTMASK) == D3DTA_TEXTURE && (ArgsMask(data[DXVK_TSS_COLOROP]) & (1 << 0u)))
            || ((data[DXVK_TSS_COLORARG1] & D3DTA_SELECTMASK) == D3DTA_TEXTURE && (ArgsMask(data[DXVK_TSS_COLOROP]) & (1 << 1u)))

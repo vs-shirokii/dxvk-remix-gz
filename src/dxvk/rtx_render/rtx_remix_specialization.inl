@@ -32,26 +32,28 @@ namespace pnext::detail {
 
   // clang-format off
   using AllTypes = TypeList<
-    remixapi_MaterialInfo,
-    remixapi_MaterialInfoPortalEXT,
-    remixapi_MaterialInfoTranslucentEXT,
-    remixapi_MaterialInfoOpaqueEXT,
-    remixapi_MaterialInfoOpaqueSubsurfaceEXT,
-    remixapi_LightInfoSphereEXT,
-    remixapi_LightInfoRectEXT,
-    remixapi_LightInfoDiskEXT,
-    remixapi_LightInfoCylinderEXT,
-    remixapi_LightInfoDistantEXT,
-    remixapi_LightInfoDomeEXT,
-    remixapi_LightInfoUSDEXT,
-    remixapi_LightInfo,
-    remixapi_MeshInfo,
-    remixapi_InstanceInfo,
-    remixapi_InstanceInfoBoneTransformsEXT,
-    remixapi_InstanceInfoBlendEXT,
-    remixapi_InstanceInfoObjectPickingEXT,
-    remixapi_CameraInfo,
-    remixapi_CameraInfoParameterizedEXT
+    remixapi_MaterialInfo
+  , remixapi_MaterialInfoPortalEXT
+  , remixapi_MaterialInfoTranslucentEXT
+  , remixapi_MaterialInfoOpaqueEXT
+  , remixapi_MaterialInfoOpaqueSubsurfaceEXT
+  , remixapi_LightInfoSphereEXT
+  , remixapi_LightInfoRectEXT
+  , remixapi_LightInfoDiskEXT
+  , remixapi_LightInfoCylinderEXT
+  , remixapi_LightInfoDistantEXT
+  , remixapi_LightInfoDomeEXT
+  , remixapi_LightInfoUSDEXT
+  , remixapi_LightInfo
+  , remixapi_MeshInfo
+  , remixapi_InstanceInfo
+  , remixapi_InstanceInfoBoneTransformsEXT
+  , remixapi_InstanceInfoBlendEXT
+  , remixapi_InstanceInfoObjectPickingEXT
+  , remixapi_CameraInfo
+  , remixapi_CameraInfoParameterizedEXT
+  , remixapi_UIInstanceInfo
+  , remixapi_CreateImageInfo
   >;
 
   template< typename T > constexpr remixapi_StructType ToEnum                 = REMIXAPI_STRUCT_TYPE_NONE;
@@ -75,6 +77,8 @@ namespace pnext::detail {
   template<> constexpr auto ToEnum< remixapi_InstanceInfoObjectPickingEXT   > = REMIXAPI_STRUCT_TYPE_INSTANCE_INFO_OBJECT_PICKING_EXT;
   template<> constexpr auto ToEnum< remixapi_CameraInfo                     > = REMIXAPI_STRUCT_TYPE_CAMERA_INFO;
   template<> constexpr auto ToEnum< remixapi_CameraInfoParameterizedEXT     > = REMIXAPI_STRUCT_TYPE_CAMERA_INFO_PARAMETERIZED_EXT;
+  template<> constexpr auto ToEnum< remixapi_UIInstanceInfo                 > = REMIXAPI_STRUCT_TYPE_UI_INSTANCE_INFO;
+  template<> constexpr auto ToEnum< remixapi_CreateImageInfo                > = REMIXAPI_STRUCT_TYPE_CREATE_IMAGE_INFO;
 
   template< typename T > struct Root                                         { using Type = T; /* by default, a root is self */ };
   template<>           struct Root< remixapi_MaterialInfoPortalEXT          >{ using Type = remixapi_MaterialInfo;              };

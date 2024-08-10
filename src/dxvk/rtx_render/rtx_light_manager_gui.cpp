@@ -422,7 +422,7 @@ namespace dxvk {
       frustum.Setup(NDC_D3D, *reinterpret_cast<const float4x4*>(&worldToProj));
 
       for (auto&& linearizedLight : m_linearizedLights) {
-        const RtLight* light = linearizedLight;
+        const RtLight* light = linearizedLight.first;
         if (light->getType() == RtLightType::Distant) {
           continue;
         }

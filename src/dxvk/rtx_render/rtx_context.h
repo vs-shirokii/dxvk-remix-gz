@@ -114,6 +114,8 @@ namespace dxvk {
     void commitGeometryToRT(const DrawParameters& params, DrawCallState& drawCallState);
     void commitExternalGeometryToRT(ExternalDrawState&& state);
 
+    void HACK_bindExternalImage(Rc<DxvkImageView> view);
+
     static void blitImageHelper(Rc<DxvkContext> ctx, const Rc<DxvkImage>& srcImage, const Rc<DxvkImage>& dstImage, VkFilter filter);
 
     virtual void flushCommandList() override;

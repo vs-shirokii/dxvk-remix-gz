@@ -24,6 +24,30 @@
 #include "rtx/utility/math.slangh"
 #include "rtx/utility/color.slangh"
 
+
+
+#define FFX_GPU 1
+#define FFX_HLSL 1
+#define FFX_HALF 0
+#define FFX_HLSL_SM 0
+
+#include "rtx/external/ffx/gpu/ffx_core.h"
+
+// TODO: it must be done once on CPU
+static FfxUInt32x4 debug_lpmParams[24];
+FFX_STATIC void LpmSetupOut(FfxUInt32 i, FfxUInt32x4 v)
+{
+  debug_lpmParams[i] = v;
+}
+FfxUInt32x4 LpmFilterCtl(FfxUInt32 i)
+{
+  return debug_lpmParams[i];
+}
+
+#include "rtx/external/ffx/gpu/lpm/ffx_lpm.h"
+
+
+
 layout(uint, binding = TONEMAPPING_APPLY_BLUE_NOISE_TEXTURE_INPUT)
 Texture2DArray BlueNoise;
 
@@ -96,6 +120,30 @@ float3 filmicToneMapper(float3 inputColor)
   return pow(x, float3(2.2));
 }
 
+float3 lpm(float3 color)
+{
+  vec3 saturation = vec3(0, 0, 0);
+  vec3 crosstalk = vec3(0.75, 1, 1);
+
+  FfxCalculateLpmConsts(
+    false,  // set to false, if shoulderContrast==1.0
+    LPM_CONFIG_709_709, 
+    LPM_COLORS_709_709, 
+    0.0,    // softGap,
+    256.0,  // hdrMax,
+    8.0,    // lpmExposure, 
+    0.1,    // contrast,
+    1.0,    // shoulderContrast, 
+    saturation, 
+    crosstalk);
+
+  LpmFilter(
+    color.r, color.g, color.b, 
+    false,  // set to false, if shoulderContrast==1.0
+    LPM_CONFIG_709_709 );
+
+  return color;
+}
 
 // Dynamic tone mapper based on Eilertsen, Mantiuk, and Unger's paper
 // *Real-time noise-aware tone mapping*. Applies a luminance-based tone 
@@ -129,10 +177,14 @@ float3 applyToneMapping(float3 color, uint2 pixelPosition)
     if (cb.debugMode == 0) 
     {
       // Normal tone mapping
-      color = dynamicToneMapper(color);
       
       if(cb.finalizeWithACES)
       {
+        color = lpm(color);
+      }
+      else
+      {
+        color = dynamicToneMapper(color);
         color = ACESFilm(color);
       }
     } 

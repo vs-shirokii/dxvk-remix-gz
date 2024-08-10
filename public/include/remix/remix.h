@@ -113,8 +113,7 @@ namespace remix {
     };
 
     template< typename T >
-    struct Span
-    {
+    struct Span {
         const T* values{ nullptr };
         uint32_t count{ 0 };
     };
@@ -163,12 +162,14 @@ namespace remix {
     Result< void >                    Startup(const remixapi_StartupInfo& info);
     Result< void >                    Shutdown();
     Result< void >                    Present(const remixapi_PresentInfo* info = nullptr);
+    // todo: creatimage
     Result< remixapi_MaterialHandle > CreateMaterial(const remixapi_MaterialInfo& info);
     Result< void >                    DestroyMaterial(remixapi_MaterialHandle handle);
     Result< remixapi_MeshHandle >     CreateMesh(const remixapi_MeshInfo& info);
     Result< void >                    DestroyMesh(remixapi_MeshHandle handle);
     Result< void >                    SetupCamera(const remixapi_CameraInfo& info);
     Result< void >                    DrawInstance(const remixapi_InstanceInfo& info);
+    Result< void >                    DrawUIInstance(const remixapi_UIInstanceInfo& info);
     Result< remixapi_LightHandle >    CreateLight(const remixapi_LightInfo& info);
     Result< void >                    DestroyLight(remixapi_LightHandle handle);
     Result< void >                    DrawLightInstance(remixapi_LightHandle handle);
@@ -208,7 +209,7 @@ namespace remix {
         return status;
       }
 
-      static_assert(sizeof(remixapi_Interface) == 168,
+      static_assert(sizeof(remixapi_Interface) == 192,
                     "Change version, update C++ wrapper when adding new functions");
 
       remix::Interface interfaceInCpp = {};
@@ -731,6 +732,10 @@ namespace remix {
 
   inline Result< void > Interface::DrawInstance(const remixapi_InstanceInfo& info) {
     return m_CInterface.DrawInstance(&info);
+  }
+
+  inline Result<void> Interface::DrawUIInstance(const remixapi_UIInstanceInfo& info) {
+    return m_CInterface.DrawUIInstance(&info);
   }
 
 

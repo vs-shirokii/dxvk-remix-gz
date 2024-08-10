@@ -362,7 +362,9 @@ SurfaceInteraction surfaceInteractionCreate(
 
     const vec3 prevPosition = mul(surface.prevObjectToWorld, vec4(prevObjectPosition, 1.0f));
 
-    surfaceInteraction.motion = prevPosition - hitPosition;
+// HACKHACK
+    surfaceInteraction.motion = vec3(0.0);
+// HACKHACK
   }
   else
   {

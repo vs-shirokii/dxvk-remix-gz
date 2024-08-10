@@ -43,7 +43,7 @@ OpaqueSurfaceMaterial opaqueSurfaceMaterialCreate(uint16_t surfaceMaterialIndex,
   opaqueSurfaceMaterial.flags = (data13.x & 0xFF);
   if (opaqueSurfaceMaterial.flags & OPAQUE_SURFACE_MATERIAL_FLAG_HAS_ALBEDO_TEXTURE) {
     opaqueSurfaceMaterial.albedoOpacityTextureIndex = data00.x;
-    opaqueSurfaceMaterial.albedoOpacityConstant = f16vec4(0.0);
+    opaqueSurfaceMaterial.albedoOpacityConstant = f16vec4(0.0,0.0,0.0,unorm8ToF16(uint8_t(data00.y >> 8u)));
   } else {
     opaqueSurfaceMaterial.albedoOpacityTextureIndex = BINDING_INDEX_INVALID;
     opaqueSurfaceMaterial.albedoOpacityConstant = f16vec4(unorm8ToF16(uint8_t(data00.x)), unorm8ToF16(uint8_t(data00.x >> 8u)), unorm8ToF16(uint8_t(data00.y)), unorm8ToF16(uint8_t(data00.y >> 8u)));

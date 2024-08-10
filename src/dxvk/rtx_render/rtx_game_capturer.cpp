@@ -137,9 +137,13 @@ namespace dxvk {
     if(!env::getEnvVar("DXVK_RTX_CAPTURE_ENABLE_ON_FRAME").empty()) {
       Logger::info(str::format("[GameCapturer] DXVK_RTX_CAPTURE_ENABLE_ON_FRAME: ", env::getEnvVar("DXVK_RTX_CAPTURE_ENABLE_ON_FRAME")));
     }
+
+#if 0 // HACKHACK: in this branch, we never export
     env::createDirectory(BASE_DIR);
     env::createDirectory(BASE_DIR + lss::commonDirName::texDir);
     env::createDirectory(BASE_DIR + lss::commonDirName::matDir);
+#endif
+
     lss::GameExporter::setMultiThreadSafety(true);
   }
 
