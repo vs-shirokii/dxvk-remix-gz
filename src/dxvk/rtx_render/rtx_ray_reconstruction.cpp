@@ -101,6 +101,7 @@ namespace dxvk {
   }
 
   void DxvkRayReconstruction::release() {
+    m_rayReconstructionContext = {};
     mRecreate = true;
     m_normals.image = nullptr;
     m_normals.view = nullptr;
